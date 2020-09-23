@@ -52,8 +52,8 @@
 
         build-drv = pkgs.writeShellScriptBin "build-drv" ''
           PATH="${makeBinPath (with pkgs; [
-            coreutils nix self.packages.x86_64-linux.nix-build-uncached
-          ])}"
+            self.packages.x86_64-linux.nix-build-uncached
+          ])}:$PATH"
 
           mkdir -p logs
 
