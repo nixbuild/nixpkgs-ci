@@ -1,0 +1,25 @@
+on: push
+
+name: CI/CD
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nixbuild/nix-quick-install-action@v2
+        with:
+          nix_version: 3.0pre20200829_f156513
+          nix_conf: experimental-features = nix-command flakes
+      - uses: nixbuild/nixbuild-action@v1
+        with:
+          nixbuild_ssh_key: ${{ secrets.nixbuild_ssh_key }}
+      - name: eval nixpkgs
+        run: ./eval-nixpkgs.sh
+      - name: build 10 random packages
+        run: nix shell .#build-drv -c ./build-nixpkgs.sh 10 < derivations.json
+      - name: upload logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: nix-archives
+          path: logs
