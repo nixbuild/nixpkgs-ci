@@ -16,6 +16,7 @@ jobs:
           nixbuild_ssh_key: ${{ secrets.nixbuild_ssh_key }}
       - name: eval nixpkgs
         run: ./eval-nixpkgs.sh
+      - name: upload derivations
         uses: actions/upload-artifact@v2
         with:
           name: derivations
