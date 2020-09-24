@@ -13,17 +13,29 @@
 
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
-      withEval = x: f: let try = tryEval x; in
-        if try.success then f try.value else null;
+      withEval = def: x: f: let try = tryEval x; in
+        if try.success then f try.value else def;
 
-      drvPathOrNull = system: x: withEval x (attrs:
-        if isAttrs attrs && hasAttr system attrs
-        then withEval (x.${system}) (drv:
-          if isDerivation drv then withEval drv.drvPath id else null
-        ) else null
-      );
+      removed = [
+        "lispPackages.cl-async-ssl"
+        "lispPackages.wookie"
+      ];
 
-      release = import (nixpkgs + "/pkgs/top-level/release.nix") {
+      evalErr = name: [ { inherit name; drvpath = null; } ];
+
+      recurseEvalDrvs = system: name: attrs:
+        if !(isAttrs attrs) || elem name removed then evalErr name
+        else if isDerivation attrs
+        then singleton {
+          inherit name;
+          drvpath = withEval null attrs.drvPath id;
+        } else concatLists (
+          mapAttrsToList (k: v: let name' = "${name}.${k}"; in
+            withEval (evalErr name') v (recurseEvalDrvs system name')
+          ) attrs
+        );
+
+      jobs = import (nixpkgs + "/pkgs/top-level/release.nix") {
         inherit nixpkgs;
         supportedSystems = [ "x86_64-linux" ];
         nixpkgsArgs = {
@@ -33,11 +45,6 @@
           ];
         };
       };
-
-      allJobs = mapAttrsToList (name: drv: {
-        inherit name;
-        drvpath = drvPathOrNull "x86_64-linux" drv;
-      }) release;
 
     in {
 
@@ -80,14 +87,17 @@
 
       };
 
-      jobs = groupCount: groupIdx:
+      jobSubset = groupCount: groupIdx:
         let
-          totalJobCount = length allJobs;
+          allNames = attrNames jobs;
+          totalJobCount = length allNames;
           jobsPerGroup = totalJobCount / groupCount;
           jobCount =
             if groupIdx >= (groupCount - 1) then totalJobCount else jobsPerGroup;
           jobIdx = groupIdx * jobsPerGroup;
-        in sublist jobIdx jobCount allJobs;
+        in concatMap (name:
+          recurseEvalDrvs "x86_64-linux" name jobs.${name}
+        ) (sublist jobIdx jobCount allNames);
 
     };
 }
