@@ -2,6 +2,10 @@ on: push
 
 name: CI/CD
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,8 +25,8 @@ jobs:
 
       - name: eval nixpkgs
         id: eval-nixpkgs
-        working-directory: worker_${{matrix.worker_idx}}
         run: |
+          mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
           nix eval --json --apply "f: f ${{matrix.workers}} ${{matrix.worker_idx}}" ..#jobs | jq -c ".[]" > derivations.json
           echo "::set-output name=drvcount::$(wc -l < derivations.json)"
 
