@@ -19,21 +19,23 @@ jobs:
         with:
           nixbuild_ssh_key: ${{ secrets.nixbuild_ssh_key }}
       - name: eval nixpkgs
+        id: eval-nixpkgs
         env:
           WORKERS: ${{ matrix.workers }}
           WORKER_IDX: ${{ matrix.worker_idx }}
         run: |
-          nix eval --json --apply "f: f ${{ matrix.workers }} $WORKER_IDX" .#jobs > drvs.tmp
+          nix eval --json --apply "f: f $WORKERS $WORKER_IDX" .#jobs > drvs.tmp
           jq -c ".[]" drvs.tmp > derivations.json
+          echo "::set-output name=drvcount::$(wc -l derivations.json)"
       - name: upload derivations
         uses: actions/upload-artifact@v2
         with:
-          name: derivations
+          name: derivations_${{matrix.worker_idx}}.json
           path: derivations.json
-      - name: build 10 random packages
+      - name: build ${{steps.eval-nixpkgs.outputs.drvcount}} derivations
         run: shuf -n 10 derivations.json | nix shell .#build-drv -c xargs -P0 -d'\n' -I DRV build-drv "DRV"
       - name: upload logs
         uses: actions/upload-artifact@v2
         with:
-          name: logs
+          name: logs_${{matrix.worker_idx}}
           path: logs
