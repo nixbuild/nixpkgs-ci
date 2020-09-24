@@ -27,7 +27,7 @@ jobs:
         id: eval-nixpkgs
         run: |
           mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
-          ../eval-nixpkgs ${{matrix.workers}} ${{matrix.worker_idx}} > derivations.json
+          nix eval --json --apply "f: f ${{matrix.workers}} ${{matrix.worker_idx}}" ..#jobSubset | jq -c ".[]" > derivations.json
           echo "::set-output name=drvcount::$(wc -l < derivations.json)"
 
       - name: build ${{steps.eval-nixpkgs.outputs.drvcount}} derivations
