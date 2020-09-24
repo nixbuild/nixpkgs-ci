@@ -16,9 +16,13 @@
       withEval = def: x: f: let try = tryEval x; in
         if try.success then f try.value else def;
 
+      # No amount of tryEval usage seems to get around the eval errors for these
       removed = [
         "lispPackages.cl-async-ssl"
         "lispPackages.wookie"
+        "unstable"
+        "lib-tests"
+        "tarball"
       ];
 
       evalErr = name: [ { inherit name; drvpath = null; } ];
