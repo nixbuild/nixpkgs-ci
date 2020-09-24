@@ -89,10 +89,10 @@
 
       };
 
-      jobs = mapAttrsToList (name: drv: {
+      jobs = sublist 200 20 (mapAttrsToList (name: drv: {
         inherit name;
         drvpath = drvPathOrNull "x86_64-linux" drv;
-      }) release;
+      }) release);
 
     };
 }
