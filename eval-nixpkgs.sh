@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 # This duplicates the number of evaluations and runs two evals in parallel,
 # since we have 2 CPUs
 
