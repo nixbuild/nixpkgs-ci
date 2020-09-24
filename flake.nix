@@ -1,18 +1,10 @@
 {
   inputs = {
     nixpkgs.url = "nixpkgs/master";
-
     flake-utils.url = "github:numtide/flake-utils";
-
-    nix-build-uncached = {
-      url = "github:Mic92/nix-build-uncached";
-      flake = false;
-    };
   };
 
-  outputs = {
-    self, nixpkgs, flake-utils, nix-build-uncached
-  }:
+  outputs = { self, nixpkgs, flake-utils }:
 
     with nixpkgs.lib;
     with builtins;
@@ -51,16 +43,8 @@
 
       packages.x86_64-linux = {
 
-        nix-build-uncached = import nix-build-uncached {
-          inherit pkgs;
-        };
-
         build-drv = pkgs.writeShellScriptBin "build-drv" ''
           set -euo pipefail
-
-          PATH="${makeBinPath (with pkgs; [
-            self.packages.x86_64-linux.nix-build-uncached
-          ])}:$PATH"
 
           mkdir -p logs
 
@@ -69,25 +53,27 @@
           drvpath="$(jq -r .drvpath <<<"$drv")"
           log="logs/$name.log"
 
-          function status() {
+          function print_status() {
             jq -nc --arg status "$1" --argjson drv "$drv" '$drv + { status: $status }'
           }
 
+          function will_build() {
+            nix build --dry-run "$drvpath" 2>&1 | grep -q "will be built"
+          }
+
           if [ "$drvpath" = "null" ]; then
-            status fail-eval
+            print_status fail-eval
           else
-            if nix-build-uncached -build-flags "-o res-$name" "$drvpath" &> "$log"; then
-              set -- "res-$name"*
-              if [ -h "$1" ]; then
-                status built
+            if will_build; then
+              if nix build --no-link "$drvpath" &> "$log"; then
+                print_status built
                 nix log "$drvpath" >> "$log" || true
-                rm "res-$name"*
               else
-                status cached
+                print_status fail-build
+                nix log "$drvpath" >> "$log" || true
               fi
             else
-              status fail-build
-              nix log "$drvpath" >> "$log" || true
+              print_status cached
             fi
           fi
         '';

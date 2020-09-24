@@ -15,22 +15,6 @@
         "type": "github"
       }
     },
-    "nix-build-uncached": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1600759695,
-        "narHash": "sha256-iy3Ck/MVl+NGphkaVa/VItOiUb1rytPZPICoieir41k=",
-        "owner": "Mic92",
-        "repo": "nix-build-uncached",
-        "rev": "2d17b315dd1437dd64ec1f97069f761c4793362c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Mic92",
-        "repo": "nix-build-uncached",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1600896935,
@@ -49,7 +33,6 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nix-build-uncached": "nix-build-uncached",
         "nixpkgs": "nixpkgs"
       }
     }
