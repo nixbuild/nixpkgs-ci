@@ -22,7 +22,9 @@ jobs:
         env:
           WORKERS: ${{ matrix.workers }}
           WORKER_IDX: ${{ matrix.worker_idx }}
-        run: nix eval --json .#jobs | jq -c ".[]" > derivations.json
+        run: |
+          nix eval --json --apply "f: $WORKERS $WORKER_IDX" .#jobs > drvs.tmp
+          jq -c ".[]" drvs.tmp > derivations.json
       - name: upload derivations
         uses: actions/upload-artifact@v2
         with:
