@@ -27,7 +27,7 @@
       drvPathOrNull = system: x: withEval x (attrs:
         if isAttrs attrs && hasAttr system attrs
         then withEval (x.${system}) (drv:
-          if isDerivation drv then withEval drv.drvPath (x: x) else null
+          if isDerivation drv then withEval drv.drvPath id else null
         ) else null
       );
 
@@ -94,7 +94,14 @@
 
       };
 
-      jobs = sublist (length allJobs - 1000) 20 allJobs;
+      jobs = groupCount: groupIdx:
+        let
+          totalJobCount = length allJobs;
+          jobsPerGroup = totalJobCount / groupCount;
+          jobCount =
+            if groupIdx >= (groupCount - 1) then totalJobCount else jobsPerGroup;
+          jobIdx = groupIdx * jobsPerGroup;
+        in sublist jobIdx jobCount allJobs;
 
     };
 }

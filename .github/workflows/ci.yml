@@ -5,6 +5,10 @@ name: CI/CD
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workers: 10
+        worker_idx: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
     steps:
       - uses: actions/checkout@v2
       - uses: nixbuild/nix-quick-install-action@v2
@@ -15,7 +19,7 @@ jobs:
         with:
           nixbuild_ssh_key: ${{ secrets.nixbuild_ssh_key }}
       - name: eval nixpkgs
-        run: nix eval --json .#jobs | jq -c ".[]" > derivations.json
+        run: nix eval --apply "f: ${{ matrix.workers }} ${{ matrix.worker_idx }}" --json .#jobs | jq -c ".[]" > derivations.json
       - name: upload derivations
         uses: actions/upload-artifact@v2
         with:
