@@ -51,24 +51,48 @@
         };
 
         build-drv = pkgs.writeShellScriptBin "build-drv" ''
+          set -euo pipefail
+
           PATH="${makeBinPath (with pkgs; [
             self.packages.x86_64-linux.nix-build-uncached
           ])}:$PATH"
 
           mkdir -p logs
 
-          if nix-build-uncached -build-flags "--no-link" "$2" &> "logs/$1.log"; then
-            mv "logs/$1.log" "logs/pass-$1.log"
-            echo >&2 "PASS: $1"
+          drv="$1"
+          name="$(jq -r .name <<<"$drv")"
+          drvpath="$(jq -r .drvpath <<<"$drv")"
+          log="logs/$name.log"
+
+          function status() {
+            jq -nc --arg status "$1" --argjson drv "$drv" '$drv + { status: $status }'
+          }
+
+          if [ "$drvpath" = "null" ]; then
+            status fail-eval
           else
-            mv "logs/$1.log" "logs/fail-$1.log"
-            echo >&2 "FAIL: $1"
+            if nix-build-uncached -build-flags "-o res-$name" "$drvpath" &> "$log"; then
+              set -- "res-$name"*
+              if [ -h "$1" ]; then
+                status built
+                nix log "$drvpath" >> "$log" || true
+                rm "res-$name"*
+              else
+                status cached
+              fi
+            else
+              status fail-build
+              nix log "$drvpath" >> "$log" || true
+            fi
           fi
         '';
 
       };
 
-      jobs = mapAttrs (_: drvPathOrNull "x86_64-linux") release;
+      jobs = mapAttrsToList (name: drv: {
+        inherit name;
+        drvpath = drvPathOrNull "x86_64-linux" drv;
+      }) release;
 
     };
 }

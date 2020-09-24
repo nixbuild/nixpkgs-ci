@@ -3,8 +3,25 @@ on: push
 name: CI/CD
 
 jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nixbuild/nix-quick-install-action@v2
+        with:
+          nix_version: 3.0pre20200829_f156513
+          nix_conf: experimental-features = nix-command flakes
+      - name: eval nixpkgs
+        run: nix eval --json .#jobs | jq -c ".[]" > derivations.json
+      - name: upload derivations
+        uses: actions/upload-artifact@v2
+        with:
+          name: derivations
+          path: derivations.json
+
   build:
     runs-on: ubuntu-latest
+    needs: eval
     steps:
       - uses: actions/checkout@v2
       - uses: nixbuild/nix-quick-install-action@v2
@@ -14,15 +31,12 @@ jobs:
       - uses: nixbuild/nixbuild-action@v1
         with:
           nixbuild_ssh_key: ${{ secrets.nixbuild_ssh_key }}
-      - name: eval nixpkgs
-        run: ./eval-nixpkgs.sh
-      - name: upload derivations
-        uses: actions/upload-artifact@v2
+      - uses: actions/download-artifact@v2
+        id: download derivations
         with:
           name: derivations
-          path: derivations.json
       - name: build 10 random packages
-        run: nix shell .#build-drv -c ./build-nixpkgs.sh 10 < derivations.json
+        run: shuf -n 10 derivations.json | nix shell .#build-drv -c xargs -P0 -d'\n' -I DRV build-drv "DRV"
       - name: upload logs
         uses: actions/upload-artifact@v2
         with:
