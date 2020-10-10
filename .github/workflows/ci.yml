@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: matrix
         id: matrix
-        run: echo "::set-output name=matrix::$(jq --argjson w $WORKERS -nc '{ workers: [$w], worker_idx: [range(0,$w)]}')"
+        run: echo "::set-output name=matrix::$(./matrix.sh)"
 
   build:
     runs-on: ubuntu-latest
