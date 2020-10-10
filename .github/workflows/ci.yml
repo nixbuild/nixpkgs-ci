@@ -15,6 +15,7 @@ jobs:
     outputs:
       matrix: ${{steps.matrix.outputs.matrix}}
     steps:
+      - uses: actions/checkout@v2
       - name: matrix
         id: matrix
         run: echo "::set-output name=matrix::$(./matrix.sh)"
