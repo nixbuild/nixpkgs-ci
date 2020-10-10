@@ -74,10 +74,11 @@
 
           function gc_if_needed() {
             local pcent="$(df --output=pcent /nix/store | tail -n1 | tr -d ' %')"
+            local used="$(df -B1 --output=used /nix/store | tail -n1 | tr -d ' ')"
             local total="$(df -B1 --output=size /nix/store | tail -n1 | tr -d ' ')"
 
-            if ((used > 90)); then
-              nix-collect-garbage --max-freed $((total / 2))
+            if ((pcent > 90)); then
+              nix-collect-garbage --max-freed $((used - total / 2))
             fi
           }
 

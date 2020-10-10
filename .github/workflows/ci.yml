@@ -41,6 +41,8 @@ jobs:
         run: |
           mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
           nix eval --json --apply "f: f ${{matrix.workers}} ${{matrix.worker_idx}}" ..#jobSubset | jq -c ".[]" > derivations.json
+          # register a gc root for each derivation
+          jq -r '.drvpath|values' derivations.json | xargs ln -sft /nix/var/nix/gcroots
           echo "::set-output name=drvcount::$(wc -l < derivations.json)"
 
       - name: build ${{steps.eval-nixpkgs.outputs.drvcount}} derivations
