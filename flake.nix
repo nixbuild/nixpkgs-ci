@@ -98,7 +98,7 @@
             fi
           fi
 
-          gc_if_needed
+          gc_if_needed || true
         '';
 
       };
