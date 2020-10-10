@@ -32,7 +32,10 @@ jobs:
       - uses: nixbuild/nix-quick-install-action@v3
         with:
           nix_version: 3.0pre20200829_f156513
-          nix_conf: experimental-features = nix-command flakes
+          nix_conf: |
+            experimental-features = nix-command flakes
+            max-silent-time = 3600
+            timeout = 7200
       - uses: nixbuild/nixbuild-action@v1
         with:
           nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
