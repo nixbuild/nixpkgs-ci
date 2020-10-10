@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: matrix
     strategy:
+      fail-fast: false
       matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
     name: Worker ${{matrix.worker_idx}} of ${{matrix.workers}}
     steps:
