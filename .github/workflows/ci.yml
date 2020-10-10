@@ -1,18 +1,29 @@
+name: CI/CD
+
 on: push
 
-name: CI/CD
+env:
+  WORKERS: 16
 
 defaults:
   run:
     shell: bash
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{steps.matrix.outputs.matrix}}
+    steps:
+      - id: matrix
+        run: echo "::set-output name=matrix::$(jq --argjson w $WORKERS -nc '{ workers: [$w], worker_idx: [range(0,$w)]}')"
+
   build:
     runs-on: ubuntu-latest
+    needs: matrix
     strategy:
-      matrix:
-        workers: [ 12 ]
-        worker_idx: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+      matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
+    name: Worker ${{matrix.worker_idx}} of ${{matrix.workers}}
     steps:
       - uses: actions/checkout@v2
       - uses: nixbuild/nix-quick-install-action@v2
