@@ -88,16 +88,16 @@
               if nix build --no-link "$drvpath" &> "$log"; then
                 print_status built
                 nix log "$drvpath" >> "$log" || true
-                gc_if_needed
               else
                 print_status fail-build
                 nix log "$drvpath" >> "$log" || true
-                gc_if_needed
               fi
             else
               print_status cached
             fi
           fi
+
+          gc_if_needed
         '';
 
       };
