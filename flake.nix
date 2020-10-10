@@ -72,6 +72,15 @@
             nix build --dry-run "$drvpath" 2>&1 | grep -q "will be built"
           }
 
+          function gc_if_needed() {
+            local pcent="$(df --output=pcent /nix/store | tail -n1 | tr -d ' %')"
+            local total="$(df -B1 --output=size /nix/store | tail -n1 | tr -d ' ')"
+
+            if ((used > 90)); then
+              nix-collect-garbage --max-freed $((total / 2))
+            fi
+          }
+
           if [ "$drvpath" = "null" ]; then
             print_status fail-eval
           else
@@ -79,9 +88,11 @@
               if nix build --no-link "$drvpath" &> "$log"; then
                 print_status built
                 nix log "$drvpath" >> "$log" || true
+                gc_if_needed
               else
                 print_status fail-build
                 nix log "$drvpath" >> "$log" || true
+                gc_if_needed
               fi
             else
               print_status cached
