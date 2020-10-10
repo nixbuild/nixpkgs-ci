@@ -15,7 +15,8 @@ jobs:
     outputs:
       matrix: ${{steps.matrix.outputs.matrix}}
     steps:
-      - id: matrix
+      - name: matrix
+        id: matrix
         run: echo "::set-output name=matrix::$(jq --argjson w $WORKERS -nc '{ workers: [$w], worker_idx: [range(0,$w)]}')"
 
   build:
