@@ -52,7 +52,7 @@ jobs:
 
       - name: build ${{steps.eval-nixpkgs.outputs.drvcount}} derivations
         working-directory: worker_${{matrix.worker_idx}}
-        run: shuf derivations.json | nix shell ..#build-drvs build-drvs $CONCURRENT_BUILDS_PER_WORKER
+        run: shuf derivations.json | nix shell ..#build-drvs -c build-drvs $CONCURRENT_BUILDS_PER_WORKER
 
       - name: upload artifacts
         uses: actions/upload-artifact@v2
