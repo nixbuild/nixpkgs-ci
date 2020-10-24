@@ -52,12 +52,42 @@
 
     in {
 
-      packages.x86_64-linux = {
+      packages.x86_64-linux = rec {
+
+        build-drvs = pkgs.writeShellScriptBin "build-drvs" ''
+          set -euo pipefail
+
+          concurrent_drvs="$1"
+          PATH="${build-drv}/bin:$PATH"
+
+          function gc_if_needed() {
+            local pcent="$(df --output=pcent /nix/store | tail -n1 | tr -d ' %')"
+            local used="$(df -B1 --output=used /nix/store | tail -n1 | tr -d ' ')"
+            local total="$(df -B1 --output=size /nix/store | tail -n1 | tr -d ' ')"
+
+            if ((pcent > 90)); then
+              nix-collect-garbage --max-freed $((used - total / 2)) || true
+            fi
+          }
+
+          drvs="$(mktemp)"
+
+          while true; do
+            > "$drvs"
+            for i in $(seq 1 $concurrent_drvs); do
+              read drv && echo "$drv" >> "$drvs"
+            done
+
+            test -s "$drvs" || break
+
+            xargs -d '\n' -n 1 -P 0 build-drv < "$drvs"
+
+            gc_if_needed
+          done
+        '';
 
         build-drv = pkgs.writeShellScriptBin "build-drv" ''
           set -euo pipefail
-
-          mkdir -p logs
 
           drv="$1"
           name="$(jq -r .name <<<"$drv")"
@@ -72,15 +102,7 @@
             nix build --dry-run "$drvpath" 2>&1 | grep -q "will be built"
           }
 
-          function gc_if_needed() {
-            local pcent="$(df --output=pcent /nix/store | tail -n1 | tr -d ' %')"
-            local used="$(df -B1 --output=used /nix/store | tail -n1 | tr -d ' ')"
-            local total="$(df -B1 --output=size /nix/store | tail -n1 | tr -d ' ')"
-
-            if ((pcent > 90)); then
-              nix-collect-garbage --max-freed $((used - total / 2))
-            fi
-          }
+          mkdir -p logs
 
           if [ "$drvpath" = "null" ]; then
             print_status fail-eval
@@ -97,10 +119,7 @@
               print_status cached
             fi
           fi
-
-          gc_if_needed || true
         '';
-
       };
 
       # groupIdx starts at 1

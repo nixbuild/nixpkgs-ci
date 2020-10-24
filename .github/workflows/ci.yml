@@ -4,6 +4,7 @@ on: push
 
 env:
   WORKERS: 16
+  CONCURRENT_BUILDS_PER_WORKER: 8
 
 defaults:
   run:
@@ -51,7 +52,7 @@ jobs:
 
       - name: build ${{steps.eval-nixpkgs.outputs.drvcount}} derivations
         working-directory: worker_${{matrix.worker_idx}}
-        run: shuf derivations.json | nix shell ..#build-drv -c xargs -P8 -d'\n' -I DRV build-drv "DRV"
+        run: shuf derivations.json | nix shell ..#build-drvs build-drvs $CONCURRENT_BUILDS_PER_WORKER
 
       - name: upload artifacts
         uses: actions/upload-artifact@v2
