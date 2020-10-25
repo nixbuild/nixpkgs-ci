@@ -3,7 +3,7 @@ name: CI/CD
 on: push
 
 env:
-  WORKERS: 16
+  WORKERS: 24
   CONCURRENT_BUILDS_PER_WORKER: 8
 
 defaults:
