@@ -37,7 +37,7 @@ jobs:
             experimental-features = nix-command flakes
             max-silent-time = 1800
             timeout = 3600
-      - uses: nixbuild/nixbuild-action@v2
+      - uses: nixbuild/nixbuild-action@v3
         with:
           nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
           cache-build-timeouts: true
