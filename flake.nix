@@ -68,20 +68,21 @@
             fi
           }
 
-          drvs="$(mktemp)"
-
+          # Run garbage collector every two minutes in the background to make
+          # sure we don't run out of disk space
           while true; do
-            > "$drvs"
-            for i in $(seq 1 $concurrent_drvs); do
-              read drv && echo "$drv" >> "$drvs"
-            done
+            gc_if_needed || true
+            sleep 120
+          done &
+          gc_loop=$!
 
-            test -s "$drvs" || break
+          function cleanup() {
+            kill $gc_loop
+          }
 
-            xargs -d '\n' -n 1 -P 0 build-drv < "$drvs"
+          trap cleanup EXIT
 
-            gc_if_needed
-          done
+          xargs -d '\n' -n 1 -P $concurrent_drvs build-drv
         '';
 
         build-drv = pkgs.writeShellScriptBin "build-drv" ''
@@ -106,12 +107,10 @@
             print_status fail-eval
           else
             if will_build; then
-              if nix build --no-link "$drvpath" &> "$log"; then
+              if nix build -L --no-link "$drvpath" &> "$log"; then
                 print_status built
-                nix log "$drvpath" >> "$log" || true
               else
                 print_status fail-build
-                nix log "$drvpath" >> "$log" || true
               fi
             else
               print_status cached
