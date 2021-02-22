@@ -13,7 +13,7 @@
 
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
-      withEval = def: x: f: let try = tryEval x; in
+      evalOr = def: x: f: let try = tryEval x; in
         if try.success then f try.value else def;
 
       # No amount of tryEval usage seems to get around the eval errors for these
@@ -30,12 +30,13 @@
       recurseEvalDrvs = system: name: attrs:
         if !(isAttrs attrs) || elem name removed then evalErr name
         else if isDerivation attrs
-        then singleton {
-          inherit name;
-          drvpath = withEval null attrs.drvPath id;
-        } else concatLists (
+        then [
+          { inherit name;
+            drvpath = evalOr null attrs.drvPath id;
+          }
+        ] else concatLists (
           mapAttrsToList (k: v: let name' = "${name}.${k}"; in
-            withEval (evalErr name') v (recurseEvalDrvs system name')
+            evalOr (evalErr name') v (recurseEvalDrvs system name')
           ) attrs
         );
 
