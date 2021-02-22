@@ -50,7 +50,7 @@ jobs:
         run: |
           mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
           nix eval --json ..#derivations | jq -c ".[]" > all_drvs.json
-          split -n l/${{matrix.worker_idx}}/${{matrix.workers}} all_drvs.json > derivations.json
+          split -n r/${{matrix.worker_idx}}/${{matrix.workers}} all_drvs.json > derivations.json
           # register a gc root for each derivation
           jq -r '.drvpath|values' derivations.json | xargs ln -sft /nix/var/nix/gcroots
           echo "::set-output name=drv_count_all::$(wc -l < all_drvs.json)"
