@@ -122,18 +122,8 @@
         '';
       };
 
-      # groupIdx starts at 1
-      jobSubset = groupCount: groupIdx:
-        let
-          allNames = attrNames jobs;
-          totalJobCount = length allNames;
-          jobsPerGroup = totalJobCount / groupCount;
-          jobCount =
-            if groupIdx >= groupCount then totalJobCount else jobsPerGroup;
-          jobIdx = (groupIdx - 1) * jobsPerGroup;
-        in concatMap (name:
-          recurseEvalDrvs "x86_64-linux" name jobs.${name}
-        ) (sublist jobIdx jobCount allNames);
-
+      derivations = concatLists (
+        mapAttrsToList (name: job: recurseEvalDrvs "x86_64-linux" name job) jobs
+      );
     };
 }

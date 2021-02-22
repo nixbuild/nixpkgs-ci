@@ -43,17 +43,17 @@ jobs:
           cache-build-timeouts: true
           keep-builds-running: true
 
-      - name: eval nixpkgs
-        id: eval-nixpkgs
+      - name: eval derivations
+        id: eval-drvs
         run: |
           mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
-          nix eval --json --apply "f: f 1 1" ..#jobSubset | jq -c ".[]" > all_drvs.json
+          nix eval --json ..#derivations | jq -c ".[]" > all_drvs.json
           split -n l/${{matrix.worker_idx}}/${{matrix.workers}} all_drvs.json > derivations.json
           # register a gc root for each derivation
           jq -r '.drvpath|values' derivations.json | xargs ln -sft /nix/var/nix/gcroots
           echo "::set-output name=drvcount::$(wc -l < derivations.json)"
 
-      - name: build ${{steps.eval-nixpkgs.outputs.drvcount}} derivations
+      - name: build ${{steps.eval-drvs.outputs.drvcount}} derivations
         working-directory: worker_${{matrix.worker_idx}}
         run: shuf derivations.json | nix shell ..#build-drvs -c build-drvs $CONCURRENT_BUILDS_PER_WORKER
 
