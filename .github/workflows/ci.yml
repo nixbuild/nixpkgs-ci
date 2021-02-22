@@ -59,7 +59,7 @@ jobs:
 
       - name: Build ${{steps.eval-drvs.outputs.drv_count_worker}} of ${{steps.eval-drvs.outputs.drv_count_all}} derivations
         working-directory: worker_${{matrix.worker_idx}}
-        run: shuf derivations.json | nix shell ..#build-drvs -c build-drvs $CONCURRENT_BUILDS_PER_WORKER
+        run: nix shell ..#build-drvs -c build-drvs $CONCURRENT_BUILDS_PER_WORKER < derivations.json
 
       - name: Upload build results
         uses: actions/upload-artifact@v2
