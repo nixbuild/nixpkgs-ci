@@ -11,10 +11,10 @@ defaults:
     shell: bash
 
 jobs:
-  matrix:
+  setup:
     runs-on: ubuntu-20.04
     outputs:
-      matrix: ${{steps.matrix.outputs.matrix}}
+      matrix: ${{steps.setup.outputs.matrix}}
     steps:
       - uses: actions/checkout@v2
       - name: matrix
@@ -23,13 +23,14 @@ jobs:
 
   build:
     runs-on: ubuntu-20.04
-    needs: matrix
+    needs: setup
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
+      matrix: ${{fromJson(needs.setup.outputs.matrix)}}
     name: Worker ${{matrix.worker_idx}} of ${{matrix.workers}}
     steps:
       - uses: actions/checkout@v2
+
       - uses: nixbuild/nix-quick-install-action@v4
         with:
           nix_version: 3.0pre20200829_f156513
@@ -37,13 +38,14 @@ jobs:
             experimental-features = nix-command flakes
             max-silent-time = 1800
             timeout = 3600
+
       - uses: nixbuild/nixbuild-action@v3
         with:
           nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
           cache-build-timeouts: true
           keep-builds-running: true
 
-      - name: eval derivations
+      - name: Evaluate all derivations
         id: eval-drvs
         run: |
           mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
@@ -51,13 +53,14 @@ jobs:
           split -n l/${{matrix.worker_idx}}/${{matrix.workers}} all_drvs.json > derivations.json
           # register a gc root for each derivation
           jq -r '.drvpath|values' derivations.json | xargs ln -sft /nix/var/nix/gcroots
-          echo "::set-output name=drvcount::$(wc -l < derivations.json)"
+          echo "::set-output name=drv_count_all::$(wc -l < all_drvs.json)"
+          echo "::set-output name=drv_count_worker::$(wc -l < derivations.json)"
 
-      - name: build ${{steps.eval-drvs.outputs.drvcount}} derivations
+      - name: Build ${{steps.eval-drvs.outputs.drv_count_worker}} of ${{steps.eval-drvs.outputs.drv_count_all}} derivations
         working-directory: worker_${{matrix.worker_idx}}
         run: shuf derivations.json | nix shell ..#build-drvs -c build-drvs $CONCURRENT_BUILDS_PER_WORKER
 
-      - name: upload artifacts
+      - name: Upload build results
         uses: actions/upload-artifact@v2
         with:
           name: worker_${{matrix.worker_idx}}
