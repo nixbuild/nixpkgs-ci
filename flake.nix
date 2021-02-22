@@ -1,15 +1,14 @@
 {
   inputs = {
     nixpkgs.url = "nixpkgs/master";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-
-    with nixpkgs.lib;
-    with builtins;
+  outputs = { self, nixpkgs }:
 
     let
+
+      inherit (nixpkgs.lib) concatLists mapAttrsToList isDerivation;
+      inherit (builtins) elem isAttrs tryEval length;
 
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
@@ -25,19 +24,17 @@
         "tarball"
       ];
 
-      evalErr = name: [ { inherit name; drvpath = null; } ];
-
       recurseEvalDrvs = system: name: attrs:
-        if !(isAttrs attrs) || elem name removed then evalErr name
-        else if isDerivation attrs
-        then [
+        if !(evalOr false attrs isAttrs) || elem name removed then [
           { inherit name;
-            drvpath = evalOr null attrs.drvPath id;
+            drvpath = null;
+          }
+        ] else if isDerivation attrs then [
+          { inherit name;
+            drvpath = attrs.drvPath;
           }
         ] else concatLists (
-          mapAttrsToList (k: v: let name' = "${name}.${k}"; in
-            evalOr (evalErr name') v (recurseEvalDrvs system name')
-          ) attrs
+          mapAttrsToList (k: recurseEvalDrvs system "${name}.${k}") attrs
         );
 
       jobs = import (nixpkgs + "/pkgs/top-level/release.nix") {
