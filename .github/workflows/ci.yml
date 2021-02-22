@@ -12,7 +12,7 @@ defaults:
 
 jobs:
   setup:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{steps.matrix.outputs.matrix}}
     steps:
@@ -22,7 +22,7 @@ jobs:
         run: echo "::set-output name=matrix::$(./matrix.sh)"
 
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: setup
     strategy:
       fail-fast: false
@@ -39,9 +39,10 @@ jobs:
             max-silent-time = 1800
             timeout = 3600
 
-      - uses: nixbuild/nixbuild-action@v3
+      - uses: nixbuild/nixbuild-action@v4
         with:
           nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
+          allow-override: false
           cache-build-timeouts: true
           keep-builds-running: true
 
