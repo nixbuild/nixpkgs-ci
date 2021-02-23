@@ -92,9 +92,18 @@
           name="$(jq -r .name <<<"$drv")"
           drvpath="$(jq -r .drvpath <<<"$drv")"
           log="logs/$name.log"
+          start_time_ns="$(${pkgs.coreutils}/bin/date +%s%N)"
+
+          echo >&2 "$name"
 
           function print_status() {
-            jq -nc --arg status "$1" --argjson drv "$drv" '$drv + { status: $status }'
+            stop_time_ns="$(${pkgs.coreutils}/bin/date +%s%N)"
+            jq -nc \
+              --arg status "$1" \
+              --argjson drv "$drv" \
+              --argjson duration_ms "$(((stop_time_ns-start_time_ns)/1000000))" \
+              '$drv + { duration_ms: $duration_ms, status: $status }' \
+              | ${pkgs.coreutils}/bin/tee -a result.json
           }
 
           function will_build() {
@@ -104,13 +113,13 @@
           mkdir -p logs
 
           if [ "$drvpath" = "null" ]; then
-            print_status fail-eval
+            print_status eval_failed
           else
             if will_build; then
               if nix build -L --no-link "$drvpath" &> "$log"; then
-                print_status built
+                print_status build_succeeded
               else
-                print_status fail-build
+                print_status build_failed
               fi
             else
               print_status cached

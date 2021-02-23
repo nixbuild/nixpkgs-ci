@@ -56,6 +56,7 @@ jobs:
           jq -r '.drvpath|values' derivations.json | xargs ln -sft /nix/var/nix/gcroots
           echo "::set-output name=drv_count_all::$(wc -l < all_drvs.json)"
           echo "::set-output name=drv_count_worker::$(wc -l < derivations.json)"
+          rm all_drvs.json
 
       - name: Build ${{steps.eval-drvs.outputs.drv_count_worker}} of ${{steps.eval-drvs.outputs.drv_count_all}} derivations
         working-directory: worker_${{matrix.worker_idx}}
