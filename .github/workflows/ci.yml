@@ -46,10 +46,6 @@ jobs:
           cache-build-timeouts: true
           keep-builds-running: true
 
-      - name: Disable SSH ControlPath
-        run: |
-          sudo sed -i 's/ControlPath .*$/ControlPath none/' /etc/ssh/ssh_config
-
       - name: Evaluate all derivations
         id: eval-drvs
         run: |
