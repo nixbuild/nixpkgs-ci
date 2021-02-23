@@ -116,7 +116,7 @@
             print_status eval_failed
           else
             if will_build; then
-              if nix build -L --no-link "$drvpath" &> "$log"; then
+              if nix build -L --no-link "$drvpath" 2>&1 | ${pkgs.moreutils}/bin/ts -i %.s > "$log"; then
                 print_status build_succeeded
               else
                 print_status build_failed
