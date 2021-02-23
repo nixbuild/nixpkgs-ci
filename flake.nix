@@ -64,7 +64,7 @@
             local total="$(df -B1 --output=size /nix/store | tail -n1 | tr -d ' ')"
 
             if ((pcent > 90)); then
-              nix-collect-garbage --max-freed $((used - total / 2)) || true
+              nix-collect-garbage --max-freed $((used - total / 2)) &>/dev/null || true
             fi
           }
 
