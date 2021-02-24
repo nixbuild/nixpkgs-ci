@@ -56,7 +56,7 @@
           set -euo pipefail
 
           concurrent_drvs="$1"
-          PATH="${build-drv}/bin:$PATH"
+          PATH="${build-drv}/bin:${pkgs.gzip}/bin:$PATH"
 
           function gc_if_needed() {
             local pcent="$(df --output=pcent /nix/store | tail -n1 | tr -d ' %')"
@@ -77,7 +77,9 @@
           gc_loop=$!
 
           function cleanup() {
-            kill $gc_loop
+            kill $gc_loop || true
+            gzip result.json || true
+            gzip derivations.json || true
           }
 
           trap cleanup EXIT
@@ -88,22 +90,24 @@
         build-drv = pkgs.writeShellScriptBin "build-drv" ''
           set -euo pipefail
 
+          PATH="${pkgs.coreutils}/bin:${pkgs.moreutils}/bin:${pkgs.gzip}/bin:$PATH"
+
           drv="$1"
           name="$(jq -r .name <<<"$drv")"
           drvpath="$(jq -r .drvpath <<<"$drv")"
-          log="logs/$name.log"
-          start_time_ns="$(${pkgs.coreutils}/bin/date +%s%N)"
+          log="logs/$name.log.gz"
+          start_time_ns="$(date +%s%N)"
 
           echo >&2 "$name"
 
           function print_status() {
-            stop_time_ns="$(${pkgs.coreutils}/bin/date +%s%N)"
+            stop_time_ns="$(date +%s%N)"
             jq -nc \
               --arg status "$1" \
               --argjson drv "$drv" \
               --argjson duration_ms "$(((stop_time_ns-start_time_ns)/1000000))" \
               '$drv + { duration_ms: $duration_ms, status: $status }' \
-              | ${pkgs.coreutils}/bin/tee -a result.json
+              | tee -a result.json
           }
 
           function will_build() {
@@ -116,7 +120,7 @@
             print_status eval_failed
           else
             if will_build; then
-              if nix build -L --no-link "$drvpath" 2>&1 | ${pkgs.moreutils}/bin/ts -i %.s > "$log"; then
+              if nix build -L --no-link "$drvpath" 2>&1 | ts -i %.s | gzip > "$log"; then
                 print_status build_succeeded
               else
                 print_status build_failed
