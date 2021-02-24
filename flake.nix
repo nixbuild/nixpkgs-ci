@@ -7,8 +7,8 @@
 
     let
 
-      inherit (nixpkgs.lib) concatLists mapAttrsToList isDerivation;
-      inherit (builtins) elem isAttrs tryEval length;
+      inherit (nixpkgs.lib) concatLists mapAttrsToList isDerivation concatMap sublist;
+      inherit (builtins) elem isAttrs tryEval length attrNames;
 
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
@@ -128,8 +128,17 @@
         '';
       };
 
-      derivations = concatLists (
-        mapAttrsToList (name: job: recurseEvalDrvs "x86_64-linux" name job) jobs
-      );
+      # groupIdx starts at 1
+      derivations = groupCount: groupIdx:
+        let
+          allNames = attrNames jobs;
+          totalJobCount = length allNames;
+          jobsPerGroup = totalJobCount / groupCount;
+          jobCount =
+            if groupIdx >= groupCount then totalJobCount else jobsPerGroup;
+          jobIdx = (groupIdx - 1) * jobsPerGroup;
+        in concatMap (name:
+          recurseEvalDrvs "x86_64-linux" name jobs.${name}
+        ) (sublist jobIdx jobCount allNames);
     };
 }

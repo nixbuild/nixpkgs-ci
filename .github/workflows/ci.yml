@@ -50,7 +50,7 @@ jobs:
         id: eval-drvs
         run: |
           mkdir "worker_${{matrix.worker_idx}}" && cd "$_"
-          nix eval --json ..#derivations | jq -c ".[]" > all_drvs.json
+          seq 1 3 | xargs -I GROUP -P0 nix eval --json .#derivations --apply "x: x 3 GROUP" | jq -c ".[]" > all_drvs.json
           split -n r/${{matrix.worker_idx}}/${{matrix.workers}} all_drvs.json > derivations.json
           # register a gc root for each derivation
           jq -r '.drvpath|values' derivations.json | xargs ln -sft /nix/var/nix/gcroots
