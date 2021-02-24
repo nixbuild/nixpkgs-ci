@@ -67,3 +67,14 @@ jobs:
         with:
           name: worker_${{matrix.worker_idx}}
           path: worker_${{matrix.worker_idx}}
+
+  report:
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+
+      - name: Display structure of downloaded files
+        run: ls -R
