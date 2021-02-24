@@ -4,7 +4,7 @@ on: push
 
 env:
   WORKERS: 24
-  CONCURRENT_BUILDS_PER_WORKER: 8
+  CONCURRENT_BUILDS_PER_WORKER: 12
 
 defaults:
   run:
