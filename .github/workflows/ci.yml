@@ -39,7 +39,7 @@ jobs:
             max-silent-time = 1800
             timeout = 3600
 
-      - uses: nixbuild/nixbuild-action@v4
+      - uses: nixbuild/nixbuild-action@v5
         with:
           nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
           allow-override: false
