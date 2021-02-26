@@ -7,7 +7,7 @@ let
     eval_failed = 0;
     build_failed = 0;
     build_succeeded = 0;
-  } // fromJSON (readFile ./counts.json);
+  } // fromJSON (readFile ./build_counts.json);
 
   drvCount = foldl' add 0 (attrValues buildCounts);
 
