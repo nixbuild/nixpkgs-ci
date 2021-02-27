@@ -72,8 +72,6 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build
     steps:
-      - uses: actions/checkout@v2
-
       - uses: nixbuild/nix-quick-install-action@v5
         with:
           nix_version: 2.4pre20201205_a5d85d0
@@ -83,6 +81,8 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           path: ~/artifacts
+
+      - uses: actions/checkout@v2
 
       - name: Summarise build results
         run: zcat ~/artifacts/worker_*/result.json.gz | jq -nf count_builds.jq > build_counts.json
