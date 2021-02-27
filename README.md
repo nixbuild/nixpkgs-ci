@@ -11,10 +11,10 @@ integrated into CI setups.
 
 ## Latest Build Results
 
-|Total Derivation Count|                       42655|                                                     |
+|Total Derivation Count|                       42805|                                                     |
 |:---------------------|------------------------------------------:|----------------------------------------------------:|
-|**Failed Evaluations**|    **3394**|      **7.9 %**|
-|**Attempted Builds**  |                 **39261**|                                                     |
-|**Failed Builds**     |   **862**|   **2.1 %**|
-|**Succesful Builds**  |**169**|**0.4 %**|
-|**Cached Builds**     |         **38230**|         **97.3 %**|
+|**Failed Evaluations**|    **3243**|      **7.5 %**|
+|**Attempted Builds**  |                 **39562**|                                                     |
+|**Failed Builds**     |   **1949**|   **4.9 %**|
+|**Succesful Builds**  |**770**|**1.9 %**|
+|**Cached Builds**     |         **36843**|         **93.1 %**|
